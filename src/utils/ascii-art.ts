@@ -7,7 +7,7 @@ export const CLAUDE_LOGO = `     ▐▛███▜▌
       ▘▘ ▝▝   `;
 
 /**
- * Get the Claude logo
+ * Get the Codex receipt logo
  */
 export function getHeader(): string {
   return CLAUDE_LOGO;

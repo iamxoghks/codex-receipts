@@ -1,216 +1,232 @@
-import { execa } from "execa";
-import type {
-  CcusageResponse,
-  CcusageSession,
-  ModelBreakdown,
-} from "../types/ccusage.js";
+import { existsSync } from "fs";
+import { readFile, readdir } from "fs/promises";
+import { basename, join } from "path";
+import type { CcusageSession, ModelBreakdown } from "../types/ccusage.js";
 
-interface CcusageEntry {
-  timestamp: string;
-  inputTokens: number;
-  outputTokens: number;
-  cacheCreationTokens?: number;
-  cacheReadTokens?: number;
-  model: string;
-  costUSD: number;
+interface CodexSessionIndexEntry {
+  id: string;
+  thread_name?: string;
+  updated_at?: string;
 }
 
-interface CcusageByIdResponse {
-  sessionId: string;
-  totalCost: number;
-  totalTokens: number;
-  entries: CcusageEntry[];
+interface CodexLogEntry {
+  timestamp?: string;
+  type?: string;
+  payload?: {
+    id?: string;
+    cwd?: string;
+    model?: string;
+    model_provider?: string;
+    type?: string;
+    role?: string;
+    name?: string;
+    info?: {
+      total_token_usage?: {
+        input_tokens?: number;
+        cached_input_tokens?: number;
+        output_tokens?: number;
+        reasoning_output_tokens?: number;
+        total_tokens?: number;
+      };
+    };
+  };
 }
 
 export class DataFetcher {
-  /**
-   * Fetch accurate session data by exact session ID.
-   * Uses `ccusage session --id` which returns the true total cost
-   * (unlike --breakdown which splits into sub-session slices).
-   */
   async fetchSessionById(sessionId: string): Promise<CcusageSession> {
-    const { stdout } = await execa(
-      "npx",
-      ["ccusage", "session", "--id", sessionId, "--json"],
-      { timeout: 30000 },
-    );
-
-    const data: CcusageByIdResponse = JSON.parse(stdout);
-
-    // Aggregate entries by model
-    const modelMap = new Map<
-      string,
-      {
-        inputTokens: number;
-        outputTokens: number;
-        cacheCreationTokens: number;
-        cacheReadTokens: number;
-        totalTokens: number;
-      }
-    >();
-
-    let totalInput = 0;
-    let totalOutput = 0;
-    let totalCacheCreation = 0;
-    let totalCacheRead = 0;
-
-    for (const entry of data.entries) {
-      // Skip synthetic entries (no real model)
-      if (entry.model === "<synthetic>") continue;
-
-      const input = entry.inputTokens || 0;
-      const output = entry.outputTokens || 0;
-      const cacheCreation = entry.cacheCreationTokens || 0;
-      const cacheRead = entry.cacheReadTokens || 0;
-
-      totalInput += input;
-      totalOutput += output;
-      totalCacheCreation += cacheCreation;
-      totalCacheRead += cacheRead;
-
-      const existing = modelMap.get(entry.model) || {
-        inputTokens: 0,
-        outputTokens: 0,
-        cacheCreationTokens: 0,
-        cacheReadTokens: 0,
-        totalTokens: 0,
-      };
-
-      existing.inputTokens += input;
-      existing.outputTokens += output;
-      existing.cacheCreationTokens += cacheCreation;
-      existing.cacheReadTokens += cacheRead;
-      existing.totalTokens += input + output + cacheCreation + cacheRead;
-      modelMap.set(entry.model, existing);
+    const sessionFile = await this.findSessionFile(sessionId);
+    if (!sessionFile) {
+      throw new Error(`No Codex session matching "${sessionId}"`);
     }
 
-    // Distribute totalCost across models proportionally by token count
-    const totalTokensAcrossModels = [...modelMap.values()].reduce(
-      (sum, m) => sum + m.totalTokens,
-      0,
-    );
-
-    const modelBreakdowns: ModelBreakdown[] = [...modelMap.entries()].map(
-      ([modelName, stats]) => ({
-        modelName,
-        inputTokens: stats.inputTokens,
-        outputTokens: stats.outputTokens,
-        cacheCreationTokens: stats.cacheCreationTokens,
-        cacheReadTokens: stats.cacheReadTokens,
-        cost:
-          totalTokensAcrossModels > 0
-            ? data.totalCost * (stats.totalTokens / totalTokensAcrossModels)
-            : 0,
-      }),
-    );
-
-    return {
-      sessionId: data.sessionId,
-      inputTokens: totalInput,
-      outputTokens: totalOutput,
-      cacheCreationTokens: totalCacheCreation,
-      cacheReadTokens: totalCacheRead,
-      totalTokens: data.totalTokens,
-      totalCost: data.totalCost,
-      modelsUsed: [...modelMap.keys()],
-      modelBreakdowns,
-    };
+    return this.readCodexSession(sessionFile);
   }
 
-  /**
-   * Discover a session from the ccusage breakdown list, then fetch accurate
-   * data via --id.
-   *
-   * @param sessionQuery Optional filter — matches against:
-   *   1. Project path UUID (or prefix, e.g. "5ede5ccb")
-   *   2. Session name (e.g. "subagents") — picks the most recent match
-   *   If omitted, returns the first session with a valid project path.
-   */
   async fetchSessionData(sessionQuery?: string): Promise<CcusageSession> {
-    try {
-      const args = ["session", "--json", "--breakdown"];
+    const sessionFile = sessionQuery
+      ? await this.findSessionFile(sessionQuery)
+      : await this.getMostRecentSessionFile();
 
-      const { stdout } = await execa("npx", ["ccusage", ...args], {
-        timeout: 30000,
-      });
-
-      const response: CcusageResponse = JSON.parse(stdout);
-
-      if (!response.sessions || response.sessions.length === 0) {
-        throw new Error("No session data found");
-      }
-
-      const validSessions = response.sessions.filter(
-        (s) => s.projectPath && s.projectPath !== "Unknown Project",
+    if (!sessionFile) {
+      throw new Error(
+        sessionQuery
+          ? `No Codex session matching "${sessionQuery}"`
+          : "No Codex sessions found under ~/.codex/sessions",
       );
-
-      if (validSessions.length === 0) {
-        throw new Error(
-          "No sessions with valid project paths found. Please run this command from a SessionEnd hook.",
-        );
-      }
-
-      let match: CcusageSession | undefined;
-
-      if (!sessionQuery) {
-        match = validSessions[0];
-      } else {
-        // Try matching by project path UUID (exact or prefix)
-        match = validSessions.find((s) => {
-          const uuid = s.projectPath!.split("/").pop() || "";
-          return uuid === sessionQuery || uuid.startsWith(sessionQuery);
-        });
-
-        // Try matching by session name (returns first/most recent match)
-        if (!match) {
-          match = validSessions.find((s) => s.sessionId === sessionQuery);
-        }
-      }
-
-      if (!match) {
-        const available = validSessions
-          .slice(0, 10)
-          .map((s) => {
-            const uuid = s.projectPath!.split("/").pop() || "";
-            const short = uuid.slice(0, 8);
-            return `  ${short}  ${s.sessionId.padEnd(20)}  $${s.totalCost.toFixed(2)}`;
-          })
-          .join("\n");
-
-        throw new Error(
-          `No session matching "${sessionQuery}". Available sessions:\n${available}`,
-        );
-      }
-
-      // Extract the full UUID from the projectPath and re-fetch via --id
-      // for accurate totals (--breakdown only shows sub-session slices)
-      const fullUuid = match.projectPath!.split("/").pop();
-      if (fullUuid) {
-        try {
-          const accurate = await this.fetchSessionById(fullUuid);
-          // Preserve projectPath from the discovery result
-          accurate.projectPath = match.projectPath;
-          return accurate;
-        } catch {
-          // Fall back to breakdown data if --id fails
-          return match;
-        }
-      }
-
-      return match;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Failed to fetch session data: ${error.message}`);
-      }
-      throw error;
     }
+
+    return this.readCodexSession(sessionFile);
   }
 
-  /**
-   * Get the most recent session ID
-   */
   async getMostRecentSessionId(): Promise<string> {
     const sessionData = await this.fetchSessionData();
     return sessionData.sessionId;
+  }
+
+  private async readCodexSession(sessionFile: string): Promise<CcusageSession> {
+    const content = await readFile(sessionFile, "utf-8");
+    const entries = content
+      .split("\n")
+      .filter((line) => line.trim())
+      .map((line) => JSON.parse(line) as CodexLogEntry);
+
+    const meta = entries.find((entry) => entry.type === "session_meta");
+    const turnContext = entries.find((entry) => entry.type === "turn_context");
+    const responseItems = entries.filter((entry) => entry.type === "response_item");
+    const eventMessages = entries.filter((entry) => entry.type === "event_msg");
+
+    const userMessages = responseItems.filter(
+      (entry) => entry.payload?.type === "message" && entry.payload.role === "user",
+    ).length;
+    const assistantMessages = responseItems.filter(
+      (entry) =>
+        entry.payload?.type === "message" && entry.payload.role === "assistant",
+    ).length;
+    const toolCalls = responseItems.filter(
+      (entry) => entry.payload?.type === "function_call",
+    ).length;
+    const toolOutputs = responseItems.filter(
+      (entry) => entry.payload?.type === "function_call_output",
+    ).length;
+    const reasoningItems = responseItems.filter(
+      (entry) => entry.payload?.type === "reasoning",
+    ).length;
+
+    const tokenUsage = [...eventMessages]
+      .reverse()
+      .map((entry) => entry.payload?.info?.total_token_usage)
+      .find(Boolean);
+
+    const inputTokens = tokenUsage?.input_tokens || 0;
+    const outputTokens = tokenUsage?.output_tokens || 0;
+    const cacheReadTokens = tokenUsage?.cached_input_tokens || 0;
+    const reasoningTokens = tokenUsage?.reasoning_output_tokens || 0;
+    const totalTokens =
+      tokenUsage?.total_tokens ||
+      inputTokens + outputTokens + cacheReadTokens + reasoningTokens;
+
+    const modelName = turnContext?.payload?.model || meta?.payload?.model || "codex";
+    const workUnits =
+      userMessages * 3 +
+      assistantMessages * 5 +
+      toolCalls * 8 +
+      toolOutputs * 2 +
+      reasoningItems * 4 +
+      Math.ceil(totalTokens / 1000);
+
+    const modelBreakdowns: ModelBreakdown[] = [
+      {
+        modelName: "User prompts",
+        inputTokens: userMessages,
+        outputTokens: 0,
+        cacheCreationTokens: 0,
+        cacheReadTokens: 0,
+        cost: userMessages * 3,
+      },
+      {
+        modelName: "Assistant replies",
+        inputTokens: 0,
+        outputTokens: assistantMessages,
+        cacheCreationTokens: 0,
+        cacheReadTokens: 0,
+        cost: assistantMessages * 5,
+      },
+      {
+        modelName: "Tool calls",
+        inputTokens: toolCalls,
+        outputTokens: toolOutputs,
+        cacheCreationTokens: reasoningItems,
+        cacheReadTokens: 0,
+        cost: toolCalls * 8 + toolOutputs * 2 + reasoningItems * 4,
+      },
+    ];
+
+    if (totalTokens > 0) {
+      modelBreakdowns.push({
+        modelName: "Context tokens",
+        inputTokens,
+        outputTokens,
+        cacheCreationTokens: reasoningTokens,
+        cacheReadTokens,
+        cost: Math.ceil(totalTokens / 1000),
+      });
+    }
+
+    return {
+      sessionId: meta?.payload?.id || this.extractIdFromFile(sessionFile),
+      inputTokens,
+      outputTokens,
+      cacheCreationTokens: reasoningTokens,
+      cacheReadTokens,
+      totalTokens,
+      totalCost: workUnits,
+      modelsUsed: [modelName],
+      modelBreakdowns,
+      projectPath: sessionFile,
+      lastActivity: entries[entries.length - 1]?.timestamp,
+    };
+  }
+
+  private async findSessionFile(sessionQuery: string): Promise<string | undefined> {
+    const fromIndex = await this.findSessionIdFromIndex(sessionQuery);
+    const query = fromIndex || sessionQuery;
+    const files = await this.listSessionFiles();
+
+    return files
+      .sort()
+      .reverse()
+      .find((file) => basename(file).includes(query) || file.includes(query));
+  }
+
+  private async findSessionIdFromIndex(
+    sessionQuery: string,
+  ): Promise<string | undefined> {
+    const home = process.env.HOME || process.env.USERPROFILE || "";
+    const indexPath = join(home, ".codex", "session_index.jsonl");
+    if (!existsSync(indexPath)) return undefined;
+
+    const content = await readFile(indexPath, "utf-8");
+    const entries = content
+      .split("\n")
+      .filter((line) => line.trim())
+      .map((line) => JSON.parse(line) as CodexSessionIndexEntry);
+
+    const match = [...entries].reverse().find((entry) => {
+      return (
+        entry.id === sessionQuery ||
+        entry.id.startsWith(sessionQuery) ||
+        entry.thread_name?.toLowerCase().includes(sessionQuery.toLowerCase())
+      );
+    });
+
+    return match?.id;
+  }
+
+  private async getMostRecentSessionFile(): Promise<string | undefined> {
+    const files = await this.listSessionFiles();
+    return files.sort().at(-1);
+  }
+
+  private async listSessionFiles(): Promise<string[]> {
+    const home = process.env.HOME || process.env.USERPROFILE || "";
+    const sessionsDir = join(home, ".codex", "sessions");
+    if (!existsSync(sessionsDir)) return [];
+    return this.walkJsonl(sessionsDir);
+  }
+
+  private async walkJsonl(dir: string): Promise<string[]> {
+    const dirents = await readdir(dir, { withFileTypes: true });
+    const files = await Promise.all(
+      dirents.map(async (dirent) => {
+        const fullPath = join(dir, dirent.name);
+        if (dirent.isDirectory()) return this.walkJsonl(fullPath);
+        return dirent.isFile() && dirent.name.endsWith(".jsonl") ? [fullPath] : [];
+      }),
+    );
+    return files.flat();
+  }
+
+  private extractIdFromFile(sessionFile: string): string {
+    return basename(sessionFile).replace(/^rollout-/, "").replace(/\.jsonl$/, "");
   }
 }

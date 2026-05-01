@@ -1,4 +1,5 @@
-// ccusage JSON response types (actual format from ccusage CLI)
+// Receipt usage types. The shape is inherited from the original project,
+// but Codex Receipts fills it from local Codex JSONL session logs.
 
 export interface ModelBreakdown {
   modelName: string;

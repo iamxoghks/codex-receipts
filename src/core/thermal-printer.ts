@@ -2,18 +2,14 @@ import { createConnection } from "net";
 import { exec } from "child_process";
 import { promisify } from "util";
 import type { ReceiptData } from "./receipt-generator.js";
-import {
-  formatCurrency,
-  formatNumber,
-  formatDateTime,
-} from "../utils/formatting.js";
+import { formatNumber, formatDateTime } from "../utils/formatting.js";
 
 const execAsync = promisify(exec);
 
 const WIDTH = 40; // TM-T88V 80mm paper, Font A minus margin
 const LEFT_MARGIN_DOTS = 12; // 1 character width at 203 dpi
 
-const REPO_URL = "https://github.com/chrishutchinson/claude-receipts";
+const REPO_URL = "https://github.com/iamxoghks/codex-receipts";
 
 // Epson USB vendor ID
 const EPSON_VENDOR_ID = 0x04b8;
@@ -63,7 +59,7 @@ class EscPosBuilder {
   }
 
   /**
-   * Print the Claude logo using CP437 block characters.
+   * Print the receipt logo using CP437 block characters.
    * 5-row character: solid head, eyes, wider arms, solid body, legs.
    */
   logo(): this {
@@ -252,7 +248,7 @@ export class ThermalPrinterRenderer {
         b.bold(true);
         b.leftRight(
           this.getModelName(model.modelName),
-          formatCurrency(model.cost),
+          this.formatPoints(model.cost),
         );
         b.bold(false);
         b.drawLine("-");
@@ -277,7 +273,7 @@ export class ThermalPrinterRenderer {
 
     // --- Total ---
     b.bold(true);
-    b.leftRight("TOTAL", formatCurrency(data.sessionData.totalCost));
+    b.leftRight("TOTAL", this.formatPoints(data.sessionData.totalCost));
     b.bold(false);
     b.drawLine();
     b.line();
@@ -287,15 +283,15 @@ export class ThermalPrinterRenderer {
     b.line(`CASHIER: ${this.getMainModel(data.sessionData)}`);
     b.line();
     b.align("center");
-    b.line("Thank you for building!");
+    b.line("Proof of work, but cute.");
     b.line();
 
     // --- Repo QR code ---
     b.align("center");
-    b.line("Print your own Claude receipts:");
+    b.line("Print your own Codex receipts:");
     b.qrCode(REPO_URL, 4);
-    b.line("github.com/chrishutchinson");
-    b.line("/claude-receipts");
+    b.line("github.com/iamxoghks");
+    b.line("/codex-receipts");
     b.line();
 
     // --- Cut ---
@@ -434,7 +430,7 @@ export class ThermalPrinterRenderer {
     const { join } = await import("path");
     const { tmpdir } = await import("os");
 
-    const tmpFile = join(tmpdir(), `claude-receipt-${Date.now()}.bin`);
+    const tmpFile = join(tmpdir(), `codex-receipt-${Date.now()}.bin`);
 
     try {
       await writeFile(tmpFile, buffer);
@@ -449,28 +445,25 @@ export class ThermalPrinterRenderer {
   }
 
   private getModelName(model: string): string {
-    const cleaned = model.replace(/-\d{8}$/, "");
-
-    const modelMap: Record<string, string> = {
-      "claude-sonnet-4-5": "Claude Sonnet 4.5",
-      "claude-opus-4-5": "Claude Opus 4.5",
-      "claude-3-5-sonnet": "Claude 3.5 Sonnet",
-      "claude-3-opus": "Claude 3 Opus",
-      "claude-3-haiku": "Claude 3 Haiku",
-    };
-
-    return modelMap[cleaned] || model;
+    return model
+      .replace(/^gpt-/, "GPT-")
+      .replace(/^codex$/, "Codex")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
   private getMainModel(sessionData: ReceiptData["sessionData"]): string {
-    if (sessionData.modelBreakdowns && sessionData.modelBreakdowns.length > 0) {
-      return this.getModelName(sessionData.modelBreakdowns[0].modelName);
-    }
-
     if (sessionData.modelsUsed && sessionData.modelsUsed.length > 0) {
       return this.getModelName(sessionData.modelsUsed[0]);
     }
 
-    return "Claude";
+    if (sessionData.modelBreakdowns && sessionData.modelBreakdowns.length > 0) {
+      return this.getModelName(sessionData.modelBreakdowns[0].modelName);
+    }
+
+    return "Codex";
+  }
+
+  private formatPoints(points: number): string {
+    return `${formatNumber(Math.round(points))} pts`;
   }
 }

@@ -52,25 +52,21 @@ export class GenerateCommand {
       // Load config
       const config = await this.configManager.loadConfig();
 
-      // Fetch session data from ccusage
+      // Fetch session data from local Codex logs
       spinner.text = "Fetching session data...";
 
       let sessionData;
       try {
         if (actualSessionId) {
-          // From hook or when we have the full UUID — fetch directly by ID
-          // for accurate totals (avoids sub-session slice issue with --breakdown)
-          sessionData =
-            await this.dataFetcher.fetchSessionById(actualSessionId);
+          sessionData = await this.dataFetcher.fetchSessionById(actualSessionId);
         } else {
-          // Manual mode — discover session by prefix/name, then fetch accurate data
           sessionData =
             await this.dataFetcher.fetchSessionData(options.session);
         }
       } catch (err) {
         if (stdinData) {
-          // Session not found in ccusage — likely too short or not yet processed.
-          // Exit silently rather than generating a receipt for the wrong session.
+          // Session not found yet. Exit silently rather than generating a receipt
+          // for the wrong session.
           spinner.stop();
           return;
         }
@@ -79,20 +75,14 @@ export class GenerateCommand {
 
       // Determine transcript path if not from hook
       if (!transcriptPath) {
-        // Try to extract actual session ID from projectPath
-        // Format: "project-name/actual-session-id"
         if (
           sessionData.projectPath &&
           sessionData.projectPath !== "Unknown Project"
         ) {
-          const parts = sessionData.projectPath.split("/");
-          actualSessionId = parts[parts.length - 1]; // Last part is the actual session ID
-
-          const home = process.env.HOME || process.env.USERPROFILE || "";
-          transcriptPath = `${home}/.claude/projects/${sessionData.projectPath}.jsonl`;
+          transcriptPath = sessionData.projectPath;
         } else {
           throw new Error(
-            "Cannot determine transcript path. Session has no valid project path.",
+            "Cannot determine Codex session path.",
           );
         }
       }
@@ -190,7 +180,7 @@ export class GenerateCommand {
     const printerInterface = options.printer || config.printer;
     if (!printerInterface) {
       throw new Error(
-        'No printer specified. Use --printer <name> or set via: claude-receipts config --set printer=EPSON_TM_T88V',
+        'No printer specified. Use --printer <name> or set via: codex-receipts config --set printer=EPSON_TM_T88V',
       );
     }
 
@@ -211,7 +201,7 @@ export class GenerateCommand {
   ): Promise<void> {
     const fileName = sessionSlug || sessionId;
     const home = process.env.HOME || process.env.USERPROFILE || "";
-    const outputDir = `${home}/.claude-receipts/projects`;
+    const outputDir = `${home}/.codex-receipts/projects`;
     const fullPath = `${outputDir}/${fileName}.html`;
 
     const html = this.htmlRenderer.generateHtml(receiptData, receipt);

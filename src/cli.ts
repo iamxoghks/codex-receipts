@@ -8,14 +8,14 @@ import { SetupCommand } from "./commands/setup.js";
 const program = new Command();
 
 program
-  .name("claude-receipts")
-  .description("Generate quirky, shareable receipts for your Claude Code usage")
+  .name("codex-receipts")
+  .description("Generate quirky, shareable receipts for your Codex usage")
   .version("1.0.0");
 
 // Generate command
 program
   .command("generate")
-  .description("Generate a receipt for a Claude Code session")
+  .description("Generate a receipt for a Codex session")
   .option("-s, --session <id>", "Specific session ID to generate receipt for")
   .addOption(
     new Option("-o, --output <format...>", "Output format(s): html, console, printer (comma-separated or repeated)")
@@ -55,8 +55,8 @@ program
 // Setup command
 program
   .command("setup")
-  .description("Setup automatic receipt generation via SessionEnd hook")
-  .option("--uninstall", "Remove the SessionEnd hook")
+  .description("Create or reset Codex Receipts configuration")
+  .option("--uninstall", "Reset Codex Receipts configuration")
   .action(async (options) => {
     const command = new SetupCommand();
     await command.execute(options);

@@ -1,10 +1,5 @@
 import type { ReceiptData } from "./receipt-generator.js";
-import {
-  formatCurrency,
-  formatNumber,
-  formatDateTime,
-  formatDuration,
-} from "../utils/formatting.js";
+import { formatNumber, formatDateTime } from "../utils/formatting.js";
 
 // Shareable receipt data structure (matches worker/src/types.ts)
 export interface ShareableReceiptData {
@@ -74,7 +69,7 @@ export class HtmlRenderer {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Claude Receipt - ${data.transcriptData.sessionSlug}</title>
+  <title>Codex Receipt - ${data.transcriptData.sessionSlug}</title>
   <style>
     * {
       margin: 0;
@@ -427,16 +422,16 @@ export class HtmlRenderer {
       <div class="total-section">
         <div class="total">
           <span>TOTAL</span>
-          <span>${formatCurrency(data.sessionData.totalCost)}</span>
+          <span>${this.formatPoints(data.sessionData.totalCost)}</span>
         </div>
       </div>
 
       <div class="footer">
         <div>CASHIER: ${this.getMainModel(data)}</div>
-        <div class="footer-message">Thank you for building!</div>
+        <div class="footer-message">Proof of work, but cute.</div>
         <div class="generated-by">
-          Print your own <strong>Claude receipts</strong> with<br>
-          <a href="https://github.com/chrishutchinson/claude-receipts" style="color: #333;">github.com/chrishutchinson/claude-receipts</a>
+          Print your own <strong>Codex receipts</strong> with<br>
+          <a href="https://github.com/chrishutchinson/codex-receipts" style="color: #333;">github.com/chrishutchinson/codex-receipts</a>
         </div>
       </div>
     </div>
@@ -481,9 +476,9 @@ ${JSON.stringify(shareableData, null, 2)}
     });
 
     // Log receipt info
-    console.log('Claude Receipt Generated!');
+    console.log('Codex Receipt Generated!');
     console.log('Session:', '${this.escapeHtml(data.transcriptData.sessionSlug)}');
-    console.log('Cost:', '${formatCurrency(data.sessionData.totalCost)}');
+    console.log('Points:', '${this.formatPoints(data.sessionData.totalCost)}');
     console.log('Press ESC to close');
 
     async function shareReceipt() {
@@ -573,7 +568,7 @@ ${JSON.stringify(shareableData, null, 2)}
 
   /**
    * Render line items HTML
-   * Shows token counts and model subtotals (not per-token-type costs, which would be inaccurate)
+   * Shows Codex work counters and model subtotals.
    */
   private renderLineItems(data: ReceiptData): string {
     let html = '<div style="margin: 20px 0;">';
@@ -583,32 +578,31 @@ ${JSON.stringify(shareableData, null, 2)}
       data.sessionData.modelBreakdowns.length > 0
     ) {
       for (const model of data.sessionData.modelBreakdowns) {
-        // Model name with its subtotal cost
         html += `<div class="model-header">
           <span class="model-name">${this.escapeHtml(this.getModelName(model.modelName))}</span>
-          <span class="model-cost">${formatCurrency(model.cost)}</span>
+          <span class="model-cost">${this.formatPoints(model.cost)}</span>
         </div>`;
 
         html += `<div class="line-item">
-          <span>  Input tokens</span>
+          <span>  Input</span>
           <span>${formatNumber(model.inputTokens)}</span>
         </div>`;
 
         html += `<div class="line-item">
-          <span>  Output tokens</span>
+          <span>  Output</span>
           <span>${formatNumber(model.outputTokens)}</span>
         </div>`;
 
         if (model.cacheCreationTokens && model.cacheCreationTokens > 0) {
           html += `<div class="line-item">
-            <span>  Cache write</span>
+            <span>  Reasoning</span>
             <span>${formatNumber(model.cacheCreationTokens)}</span>
           </div>`;
         }
 
         if (model.cacheReadTokens && model.cacheReadTokens > 0) {
           html += `<div class="line-item">
-            <span>  Cache read</span>
+            <span>  Cached</span>
             <span>${formatNumber(model.cacheReadTokens)}</span>
           </div>`;
         }
@@ -623,24 +617,20 @@ ${JSON.stringify(shareableData, null, 2)}
    * Get clean model name
    */
   private getModelName(model: string): string {
-    const cleaned = model.replace(/-\d{8}$/, "");
-
-    const modelMap: Record<string, string> = {
-      "claude-sonnet-4-5": "Claude Sonnet 4.5",
-      "claude-opus-4-5": "Claude Opus 4.5",
-      "claude-3-5-sonnet": "Claude 3.5 Sonnet",
-      "claude-3-opus": "Claude 3 Opus",
-      "claude-3-haiku": "Claude 3 Haiku",
-      "claude-haiku-4-5": "Claude Haiku 4.5",
-    };
-
-    return modelMap[cleaned] || model;
+    return model
+      .replace(/^gpt-/, "GPT-")
+      .replace(/^codex$/, "Codex")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
   /**
    * Get main model
    */
   private getMainModel(data: ReceiptData): string {
+    if (data.sessionData.modelsUsed && data.sessionData.modelsUsed.length > 0) {
+      return this.getModelName(data.sessionData.modelsUsed[0]);
+    }
+
     if (
       data.sessionData.modelBreakdowns &&
       data.sessionData.modelBreakdowns.length > 0
@@ -648,11 +638,11 @@ ${JSON.stringify(shareableData, null, 2)}
       return this.getModelName(data.sessionData.modelBreakdowns[0].modelName);
     }
 
-    if (data.sessionData.modelsUsed && data.sessionData.modelsUsed.length > 0) {
-      return this.getModelName(data.sessionData.modelsUsed[0]);
-    }
+    return "Codex";
+  }
 
-    return "Claude";
+  private formatPoints(points: number): string {
+    return `${formatNumber(Math.round(points))} pts`;
   }
 
   /**

@@ -2,10 +2,8 @@ import type { CcusageSession } from "../types/ccusage.js";
 import type { ParsedTranscript } from "../types/transcript.js";
 import type { ReceiptConfig } from "../types/config.js";
 import {
-  formatCurrency,
   formatNumber,
   formatDateTime,
-  formatDuration,
 } from "../utils/formatting.js";
 import { getHeader, SEPARATOR, LIGHT_SEPARATOR } from "../utils/ascii-art.js";
 
@@ -44,7 +42,7 @@ export class ReceiptGenerator {
 
     // Line items header
     lines.push(SEPARATOR);
-    lines.push(this.padLine("ITEM", "QTY", "PRICE"));
+    lines.push(this.padLine("ITEM", "QTY", "POINTS"));
     lines.push(LIGHT_SEPARATOR);
 
     // Model breakdown
@@ -53,18 +51,20 @@ export class ReceiptGenerator {
       data.sessionData.modelBreakdowns.length > 0
     ) {
       for (const model of data.sessionData.modelBreakdowns) {
-        lines.push(this.getModelName(model.modelName));
+        lines.push(
+          this.padLine(
+            this.getModelName(model.modelName),
+            "",
+            this.formatReceiptPoints(model.cost),
+          ),
+        );
 
         // Input tokens
         lines.push(
           this.padLine(
             "  Input tokens",
             formatNumber(model.inputTokens),
-            this.formatTokenCost(
-              model.inputTokens,
-              model.cost,
-              data.sessionData.totalTokens,
-            ),
+            "",
           ),
         );
 
@@ -73,11 +73,7 @@ export class ReceiptGenerator {
           this.padLine(
             "  Output tokens",
             formatNumber(model.outputTokens),
-            this.formatTokenCost(
-              model.outputTokens,
-              model.cost,
-              data.sessionData.totalTokens,
-            ),
+            "",
           ),
         );
 
@@ -85,13 +81,9 @@ export class ReceiptGenerator {
         if (model.cacheCreationTokens && model.cacheCreationTokens > 0) {
           lines.push(
             this.padLine(
-              "  Cache write",
-              formatNumber(model.cacheCreationTokens),
-              this.formatTokenCost(
-                model.cacheCreationTokens,
-                model.cost,
-                data.sessionData.totalTokens,
-              ),
+                "  Cache write",
+                formatNumber(model.cacheCreationTokens),
+                "",
             ),
           );
         }
@@ -99,13 +91,9 @@ export class ReceiptGenerator {
         if (model.cacheReadTokens && model.cacheReadTokens > 0) {
           lines.push(
             this.padLine(
-              "  Cache read",
-              formatNumber(model.cacheReadTokens),
-              this.formatTokenCost(
-                model.cacheReadTokens,
-                model.cost,
-                data.sessionData.totalTokens,
-              ),
+                "  Cache read",
+                formatNumber(model.cacheReadTokens),
+                "",
             ),
           );
         }
@@ -117,11 +105,11 @@ export class ReceiptGenerator {
     // Totals
     lines.push(SEPARATOR);
     lines.push(
-      this.padLine("SUBTOTAL", "", formatCurrency(data.sessionData.totalCost)),
+      this.padLine("SUBTOTAL", "", this.formatReceiptPoints(data.sessionData.totalCost)),
     );
     lines.push(LIGHT_SEPARATOR);
     lines.push(
-      this.padLine("TOTAL", "", formatCurrency(data.sessionData.totalCost)),
+      this.padLine("TOTAL", "", this.formatReceiptPoints(data.sessionData.totalCost)),
     );
     lines.push(SEPARATOR);
     lines.push("");
@@ -129,7 +117,7 @@ export class ReceiptGenerator {
     // Footer
     lines.push(`CASHIER: ${this.getMainModel(data.sessionData)}`);
     lines.push("");
-    lines.push(this.centerText("Thank you for building!", 35));
+    lines.push(this.centerText("Proof of work, but cute.", 35));
     lines.push("");
     lines.push(SEPARATOR);
 
@@ -197,48 +185,34 @@ export class ReceiptGenerator {
   }
 
   /**
-   * Format token cost (proportional to model cost)
+   * Format work points for a receipt line.
    */
-  private formatTokenCost(
-    tokens: number,
-    modelCost: number,
-    totalTokens: number,
-  ): string {
-    const proportion = tokens / totalTokens;
-    const cost = modelCost * proportion;
-    return formatCurrency(cost);
+  private formatReceiptPoints(points: number): string {
+    return `${formatNumber(Math.round(points))} pts`;
   }
 
   /**
    * Get a clean model name
    */
   private getModelName(model: string): string {
-    // Remove date suffixes and clean up model names
-    const cleaned = model.replace(/-\d{8}$/, "");
-
-    const modelMap: Record<string, string> = {
-      "claude-sonnet-4-5": "Claude Sonnet 4.5",
-      "claude-opus-4-5": "Claude Opus 4.5",
-      "claude-3-5-sonnet": "Claude 3.5 Sonnet",
-      "claude-3-opus": "Claude 3 Opus",
-      "claude-3-haiku": "Claude 3 Haiku",
-    };
-
-    return modelMap[cleaned] || model;
+    return model
+      .replace(/^gpt-/, "GPT-")
+      .replace(/^codex$/, "Codex")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
   /**
    * Get the main model used in the session
    */
   private getMainModel(sessionData: CcusageSession): string {
-    if (sessionData.modelBreakdowns && sessionData.modelBreakdowns.length > 0) {
-      return this.getModelName(sessionData.modelBreakdowns[0].modelName);
-    }
-
     if (sessionData.modelsUsed && sessionData.modelsUsed.length > 0) {
       return this.getModelName(sessionData.modelsUsed[0]);
     }
 
-    return "Claude";
+    if (sessionData.modelBreakdowns && sessionData.modelBreakdowns.length > 0) {
+      return this.getModelName(sessionData.modelBreakdowns[0].modelName);
+    }
+
+    return "Codex";
   }
 }
