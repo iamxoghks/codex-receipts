@@ -58,7 +58,7 @@ const LABELS: Record<ReceiptLocale, ReceiptLabels> = {
     subtotal: "소계",
     total: "합계",
     cashier: "담당",
-    footerMessage: "작업 증명, 귀엽게.",
+    footerMessage: "연봉 협상 때 이거 언급해.",
     printYourOwn: "Codex 영수증 직접 뽑기:",
     generatedBy: "직접 뽑아보세요",
   },

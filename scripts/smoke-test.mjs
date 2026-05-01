@@ -163,7 +163,13 @@ function testHtmlEscaping() {
     "receipt",
   );
 
-  for (const expected of ["위치", "세션", "날짜", "합계", "작업 증명"]) {
+  for (const expected of [
+    "위치",
+    "세션",
+    "날짜",
+    "합계",
+    "연봉 협상 때 이거 언급해.",
+  ]) {
     if (!koreanHtml.includes(expected)) {
       throw new Error(`Korean HTML receipt is missing "${expected}".`);
     }
