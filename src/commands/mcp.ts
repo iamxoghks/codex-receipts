@@ -66,6 +66,10 @@ export class McpCommand {
             .string()
             .optional()
             .describe("Optional location text to print on the receipt."),
+          locale: z
+            .enum(["en", "ko"])
+            .optional()
+            .describe("Optional receipt language. Defaults to config or en."),
           saveHtml: z
             .boolean()
             .optional()
@@ -80,10 +84,11 @@ export class McpCommand {
             ),
         },
       },
-      async ({ session, location, saveHtml, printer }) => {
+      async ({ session, location, locale, saveHtml, printer }) => {
         const result = await receiptService.generateReceipt({
           session,
           location,
+          locale,
           saveHtml: saveHtml || !!printer,
           printer,
         });

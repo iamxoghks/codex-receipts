@@ -14,6 +14,7 @@ export interface GenerateReceiptRequest {
   location?: string;
   saveHtml?: boolean;
   printer?: string;
+  locale?: "en" | "ko";
 }
 
 export interface GenerateReceiptResult {
@@ -56,7 +57,7 @@ export class ReceiptService {
       sessionData,
       transcriptData,
       location,
-      config,
+      config: { ...config, locale: request.locale || config.locale },
     };
     const receipt = this.receiptGenerator.generateReceipt(receiptData);
 

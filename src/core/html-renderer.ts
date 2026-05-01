@@ -1,11 +1,13 @@
 import type { ReceiptData } from "./receipt-generator.js";
 import { formatNumber, formatDateTime } from "../utils/formatting.js";
+import { getReceiptLabels } from "../utils/locale.js";
 
 export class HtmlRenderer {
   /**
    * Generate HTML receipt with embedded CSS
    */
   generateHtml(data: ReceiptData, receiptText: string): string {
+    const labels = getReceiptLabels(data.config.locale);
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -256,13 +258,13 @@ export class HtmlRenderer {
         </div>
         <div class="meta">
           <div class="meta-row">
-            <div>Location</div><div class="dots">....................</div><div class="value">${this.escapeHtml(data.location)}</div>
+            <div>${this.escapeHtml(labels.location)}</div><div class="dots">....................</div><div class="value">${this.escapeHtml(data.location)}</div>
           </div>
           <div class="meta-row">
-            <div>Session</div><div class="dots">....................</div><div class="value">${this.escapeHtml(data.transcriptData.sessionSlug)}</div>
+            <div>${this.escapeHtml(labels.session)}</div><div class="dots">....................</div><div class="value">${this.escapeHtml(data.transcriptData.sessionSlug)}</div>
           </div>
           <div class="meta-row">
-            <div>Date</div><div class="dots">....................</div><div class="value">${formatDateTime(data.transcriptData.endTime, data.config.timezone)}</div>
+            <div>${this.escapeHtml(labels.date)}</div><div class="dots">....................</div><div class="value">${formatDateTime(data.transcriptData.endTime, data.config.timezone)}</div>
           </div>
         </div>
       </div>
@@ -273,16 +275,16 @@ export class HtmlRenderer {
 
       <div class="total-section">
         <div class="total">
-          <span>TOTAL</span>
+          <span>${this.escapeHtml(labels.total)}</span>
           <span>${this.formatPoints(data.sessionData.totalCost)}</span>
         </div>
       </div>
 
       <div class="footer">
-        <div>CASHIER: ${this.getMainModel(data)}</div>
-        <div class="footer-message">Proof of work, but cute.</div>
+        <div>${this.escapeHtml(labels.cashier)}: ${this.getMainModel(data)}</div>
+        <div class="footer-message">${this.escapeHtml(labels.footerMessage)}</div>
         <div class="generated-by">
-          Print your own <strong>Codex receipts</strong> with<br>
+          ${this.escapeHtml(labels.generatedBy)} <strong>Codex receipts</strong><br>
           <a href="https://github.com/iamxoghks/codex-receipts" style="color: #333;">github.com/iamxoghks/codex-receipts</a>
         </div>
       </div>
@@ -309,6 +311,7 @@ export class HtmlRenderer {
    * Shows Codex work counters and model subtotals.
    */
   private renderLineItems(data: ReceiptData): string {
+    const labels = getReceiptLabels(data.config.locale);
     let html = '<div style="margin: 20px 0;">';
 
     if (
@@ -322,25 +325,25 @@ export class HtmlRenderer {
         </div>`;
 
         html += `<div class="line-item">
-          <span>  Input</span>
+          <span>  ${this.escapeHtml(labels.input)}</span>
           <span>${formatNumber(model.inputTokens)}</span>
         </div>`;
 
         html += `<div class="line-item">
-          <span>  Output</span>
+          <span>  ${this.escapeHtml(labels.output)}</span>
           <span>${formatNumber(model.outputTokens)}</span>
         </div>`;
 
         if (model.cacheCreationTokens && model.cacheCreationTokens > 0) {
           html += `<div class="line-item">
-            <span>  Reasoning</span>
+            <span>  ${this.escapeHtml(labels.reasoning)}</span>
             <span>${formatNumber(model.cacheCreationTokens)}</span>
           </div>`;
         }
 
         if (model.cacheReadTokens && model.cacheReadTokens > 0) {
           html += `<div class="line-item">
-            <span>  Cached</span>
+            <span>  ${this.escapeHtml(labels.cached)}</span>
             <span>${formatNumber(model.cacheReadTokens)}</span>
           </div>`;
         }

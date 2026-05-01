@@ -57,6 +57,7 @@ export class ConfigCommand {
     this.printConfigItem("Location", config.location || "(default)");
     this.printConfigItem("Timezone", config.timezone || "(system default)");
     this.printConfigItem("Printer", config.printer || "(not set)");
+    this.printConfigItem("Locale", config.locale || "en");
 
     console.log("");
   }
@@ -75,12 +76,21 @@ export class ConfigCommand {
     const trimmedKey = key.trim() as keyof ReceiptConfig;
 
     // Validate key
-    const validKeys: (keyof ReceiptConfig)[] = ["location", "timezone", "printer"];
+    const validKeys: (keyof ReceiptConfig)[] = [
+      "location",
+      "timezone",
+      "printer",
+      "locale",
+    ];
 
     if (!validKeys.includes(trimmedKey)) {
       throw new Error(
         `Invalid config key: ${trimmedKey}. Valid keys: ${validKeys.join(", ")}`,
       );
+    }
+
+    if (trimmedKey === "locale" && !["en", "ko"].includes(value)) {
+      throw new Error('Invalid locale. Valid values: "en", "ko"');
     }
 
     // Update config

@@ -35,6 +35,10 @@ program
       }),
   )
   .option("-l, --location <text>", "Override receipt location")
+  .addOption(
+    new Option("--locale <locale>", "Receipt language: en or ko")
+      .choices(["en", "ko"]),
+  )
   .option(
     "-p, --printer <interface>",
     'Printer: "usb" (auto-detect), "usb:VID:PID", "tcp://host:port", or CUPS name',

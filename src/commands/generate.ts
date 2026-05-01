@@ -27,6 +27,7 @@ export interface GenerateOptions {
   output?: string[];
   location?: string;
   printer?: string;
+  locale?: "en" | "ko";
 }
 
 export class GenerateCommand {
@@ -105,7 +106,7 @@ export class GenerateCommand {
         sessionData,
         transcriptData,
         location,
-        config,
+        config: { ...config, locale: options.locale || config.locale },
       };
 
       const receipt = this.receiptGenerator.generateReceipt(receiptData);

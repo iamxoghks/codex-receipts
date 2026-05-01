@@ -5,6 +5,7 @@ export interface ReceiptConfig {
   location?: string;
   timezone?: string;
   printer?: string;
+  locale?: "en" | "ko";
 }
 
 export const DEFAULT_CONFIG: ReceiptConfig = {
