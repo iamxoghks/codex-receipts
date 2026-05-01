@@ -66,6 +66,8 @@ npx codex-receipts generate \
   --footer-message "오늘도 수고했음"
 ```
 
+한글 기본 footer는 도미나 대사인 `연봉 협상 때 이거 언급해.`를 사용합니다. 영어 기본 footer는 기존 `Proof of work, but cute.`를 유지합니다.
+
 터미널 출력:
 
 ```bash
