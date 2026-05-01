@@ -1,17 +1,20 @@
 #!/usr/bin/env node
 
 import { Command, Option } from "commander";
+import { createRequire } from "module";
 import { GenerateCommand } from "./commands/generate.js";
 import { ConfigCommand } from "./commands/config.js";
 import { SetupCommand } from "./commands/setup.js";
 import { McpCommand } from "./commands/mcp.js";
 
+const require = createRequire(import.meta.url);
+const packageJson = require("../package.json") as { version: string };
 const program = new Command();
 
 program
   .name("codex-receipts")
   .description("Generate quirky receipts for your Codex work sessions")
-  .version("1.2.0");
+  .version(packageJson.version);
 
 // Generate command
 program

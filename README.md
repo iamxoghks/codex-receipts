@@ -31,7 +31,7 @@ codex-receipts generate --output html
 
 ```bash
 npm install
-npm run build
+npm test
 node bin/codex-receipts.js generate
 ```
 
@@ -83,6 +83,9 @@ Start the local stdio MCP server:
 npx codex-receipts mcp
 ```
 
+The MCP server is a local stdio server. It does not open an HTTP port; MCP
+clients start it as a local process and communicate over stdin/stdout.
+
 The MCP server exposes:
 
 - `list_codex_sessions`: list recent local Codex sessions from `~/.codex`
@@ -101,6 +104,10 @@ Example MCP client config:
   }
 }
 ```
+
+Use this config in any MCP client that accepts stdio server definitions. For
+example, add the `codex-receipts` server entry to the client's MCP server
+configuration, then ask the client to list sessions or generate a receipt.
 
 ## Configuration
 
@@ -144,6 +151,20 @@ remote service.
 This repo includes a Codex skill at `skills/codex-receipts`. The skill tells
 agents to use the published npm CLI for latest or specific session receipts,
 console/HTML/printer outputs, and local-only privacy expectations.
+
+## Release
+
+This package uses npm trusted publishing from GitHub Actions. To publish a new
+version, bump the package version and push the generated tag:
+
+```bash
+npm version patch
+git push origin main --tags
+```
+
+The `Publish to npm` workflow runs only for tags matching `v*`, runs `npm test`,
+and publishes the package to npm. Use `minor` or `major` instead of `patch` when
+the release scope requires it.
 
 ## Notes
 

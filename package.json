@@ -21,14 +21,15 @@
   "files": [
     "dist",
     "bin",
-    "skills"
+    "skills",
+    "scripts"
   ],
   "scripts": {
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc",
     "dev": "tsc --watch",
     "prepublishOnly": "npm run build",
-    "test": "npm run build"
+    "test": "npm run build && node scripts/smoke-test.mjs"
   },
   "keywords": [
     "codex",
