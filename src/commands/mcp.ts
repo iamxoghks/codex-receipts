@@ -101,9 +101,12 @@ export class McpCommand {
           printer: result.printer,
           receipt: result.receipt,
         };
+        const printerWarning = result.printer?.warning
+          ? `\n\nPrinter note:\n${result.printer.warning}`
+          : "";
         const summary = result.printer?.ok === false
-          ? `${result.receipt}\n\nPrinter output failed:\n${result.printer.error}\n\nHTML receipt saved: ${result.htmlPath || "(not saved)"}`
-          : result.receipt;
+          ? `${result.receipt}${printerWarning}\n\nPrinter output failed:\n${result.printer.error}\n\nHTML receipt saved: ${result.htmlPath || "(not saved)"}`
+          : `${result.receipt}${printerWarning}`;
 
         return {
           content: [

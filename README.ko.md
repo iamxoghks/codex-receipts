@@ -176,6 +176,7 @@ Codex Receipts가 읽는 파일:
 - `printer`: USB, TCP, CUPS 영수증 프린터로 ESC/POS 출력
 
 한글 라벨은 console과 HTML 출력에서 동작합니다. 감열 프린터 한글 출력은 프린터 펌웨어/코드페이지가 UTF-8 또는 한글 텍스트를 지원해야 정상 출력됩니다.
+`--locale ko`와 `--output printer`를 함께 쓰면 CLI와 MCP 결과에 UTF-8/한글 코드페이지 지원 안내가 함께 표시됩니다.
 
 ## Codex Skill
 

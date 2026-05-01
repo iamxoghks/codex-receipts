@@ -7,6 +7,7 @@ import { HtmlRenderer } from "./html-renderer.js";
 import { ConfigManager } from "./config-manager.js";
 import { ThermalPrinterRenderer } from "./thermal-printer.js";
 import { LocationDetector } from "../utils/location.js";
+import { getPrinterLocaleWarning } from "../utils/printer-warning.js";
 import type { ReceiptData } from "./receipt-generator.js";
 
 export interface GenerateReceiptRequest {
@@ -26,6 +27,7 @@ export interface GenerateReceiptResult {
     interface?: string;
     ok: boolean;
     error?: string;
+    warning?: string;
   };
 }
 
@@ -78,12 +80,14 @@ export class ReceiptService {
     receiptData: ReceiptData,
     printerInterface: string,
   ): Promise<NonNullable<GenerateReceiptResult["printer"]>> {
+    const warning = getPrinterLocaleWarning(receiptData);
     try {
       await this.thermalPrinter.printReceipt(receiptData, printerInterface);
       return {
         attempted: true,
         interface: printerInterface,
         ok: true,
+        warning,
       };
     } catch (error) {
       const message =
@@ -93,6 +97,7 @@ export class ReceiptService {
         interface: printerInterface,
         ok: false,
         error: message,
+        warning,
       };
     }
   }
