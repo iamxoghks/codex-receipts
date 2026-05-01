@@ -13,6 +13,7 @@ Generate receipt-style summaries from local Codex session logs using the publish
 - The user wants the latest Codex session summarized.
 - The user provides a specific session id, id prefix, or thread-name fragment.
 - The user asks for console, HTML, or thermal-printer receipt output.
+- The user asks for an English or Korean receipt.
 - The user asks whether receipt generation is local/private.
 
 ## Required Tool
@@ -32,6 +33,8 @@ When the MCP server is configured, you can also use its tools:
 
 For MCP printer output, pass `printer` as `usb`, `usb:VID:PID`, `tcp://HOST:9100`, or a CUPS printer name. MCP saves HTML before attempting printer output and returns printer troubleshooting guidance if printing fails.
 
+For Korean receipts, pass `--locale ko` in the CLI or `locale: "ko"` to the MCP tool.
+
 ## Common Commands
 
 Latest session, default output:
@@ -50,6 +53,12 @@ HTML output:
 
 ```bash
 npx codex-receipts generate --output html
+```
+
+Korean output:
+
+```bash
+npx codex-receipts generate --output html --locale ko
 ```
 
 Thermal printer output:
@@ -96,7 +105,8 @@ npx codex-receipts generate --location "Cheonan, KR"
 
 1. Choose the session target: latest by default, or pass `--session` when the user gives a session id, prefix, or thread-name fragment.
 2. Choose output: use `console` for chat-friendly terminal output, `html` for a shareable local file, and `printer` only when the user asks to print.
-3. Run `npx codex-receipts generate` with the selected flags.
-4. Report the generated output path for HTML receipts. For console receipts, summarize or relay the important terminal output.
-5. If printer output fails, report the exact error. For USB printer-not-found errors, point out the visible `VID:PID` list and suggest retrying with `--printer usb:VID:PID`, `--printer tcp://HOST:9100`, or a CUPS printer name.
-6. If the command fails for another reason, report the exact error and do not manually parse Codex logs unless the user explicitly asks for debugging.
+3. Choose language: default to English unless the user asks for Korean, then pass `--locale ko`.
+4. Run `npx codex-receipts generate` with the selected flags.
+5. Report the generated output path for HTML receipts. For console receipts, summarize or relay the important terminal output.
+6. If printer output fails, report the exact error. For USB printer-not-found errors, point out the visible `VID:PID` list and suggest retrying with `--printer usb:VID:PID`, `--printer tcp://HOST:9100`, or a CUPS printer name.
+7. If the command fails for another reason, report the exact error and do not manually parse Codex logs unless the user explicitly asks for debugging.

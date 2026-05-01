@@ -51,6 +51,12 @@ Generate HTML:
 npx codex-receipts generate --output html
 ```
 
+Generate a Korean receipt:
+
+```bash
+npx codex-receipts generate --output html --locale ko
+```
+
 Generate console output:
 
 ```bash
@@ -114,6 +120,7 @@ The MCP server exposes:
 set, MCP saves the HTML receipt before trying printer output. If the printer is
 not connected or cannot be found, the tool returns printer troubleshooting
 guidance and the saved `htmlPath` instead of failing the whole receipt request.
+It also accepts `locale` (`en` or `ko`) for English or Korean receipt labels.
 
 Printer output is a local side effect. Only enable the MCP `printer` option in
 trusted local MCP clients, and only pass `tcp://HOST:9100` values for printers
@@ -151,6 +158,7 @@ Run:
 npx codex-receipts setup
 npx codex-receipts config --show
 npx codex-receipts config --set timezone="Asia/Seoul"
+npx codex-receipts config --set locale=ko
 npx codex-receipts config --set printer=usb
 npx codex-receipts config --reset
 ```
@@ -172,6 +180,8 @@ remote service.
 
 - The CLI and MCP server read local Codex logs from `~/.codex` and write receipts
   under `~/.codex-receipts`.
+- Receipt language can be set per run with `--locale en|ko` or in config with
+  `locale=en|ko`.
 - Location defaults to `The Cloud`; the package does not call public-IP or
   geolocation services.
 - Shell commands are executed with argument arrays, not interpolated shell
@@ -185,6 +195,9 @@ remote service.
 - `console`: boxed terminal receipt
 - `html`: saves to `~/.codex-receipts/projects/[session-id].html`
 - `printer`: sends ESC/POS output to USB, TCP, or CUPS receipt printers
+
+Korean labels work for console and HTML output. Thermal-printer Korean output
+depends on the printer firmware/codepage support for UTF-8 or Korean text.
 
 ## Codex Skill
 

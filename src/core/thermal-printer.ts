@@ -3,6 +3,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import type { ReceiptData } from "./receipt-generator.js";
 import { formatNumber, formatDateTime } from "../utils/formatting.js";
+import { getReceiptLabels } from "../utils/locale.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -209,6 +210,7 @@ export class ThermalPrinterRenderer {
    * Build the full ESC/POS receipt buffer.
    */
   private buildReceipt(data: ReceiptData): Buffer {
+    const labels = getReceiptLabels(data.config.locale);
     const b = new EscPosBuilder();
 
     b.init();
@@ -220,8 +222,8 @@ export class ThermalPrinterRenderer {
 
     // --- Info ---
     b.align("center");
-    b.line(`Location: ${data.location}`);
-    b.line(`Session: ${data.transcriptData.sessionSlug}`);
+    b.line(`${labels.location}: ${data.location}`);
+    b.line(`${labels.session}: ${data.transcriptData.sessionSlug}`);
     b.line(formatDateTime(data.transcriptData.endTime, data.config.timezone));
     b.line();
 
@@ -244,15 +246,15 @@ export class ThermalPrinterRenderer {
         b.drawLine("-");
 
         // Token counts (no prices)
-        b.leftRight("  Input tokens", formatNumber(model.inputTokens));
-        b.leftRight("  Output tokens", formatNumber(model.outputTokens));
+        b.leftRight(`  ${labels.input}`, formatNumber(model.inputTokens));
+        b.leftRight(`  ${labels.output}`, formatNumber(model.outputTokens));
 
         if (model.cacheCreationTokens && model.cacheCreationTokens > 0) {
-          b.leftRight("  Cache write", formatNumber(model.cacheCreationTokens));
+          b.leftRight(`  ${labels.cacheWrite}`, formatNumber(model.cacheCreationTokens));
         }
 
         if (model.cacheReadTokens && model.cacheReadTokens > 0) {
-          b.leftRight("  Cache read", formatNumber(model.cacheReadTokens));
+          b.leftRight(`  ${labels.cacheRead}`, formatNumber(model.cacheReadTokens));
         }
 
         b.line();
@@ -263,22 +265,22 @@ export class ThermalPrinterRenderer {
 
     // --- Total ---
     b.bold(true);
-    b.leftRight("TOTAL", this.formatPoints(data.sessionData.totalCost));
+    b.leftRight(labels.total, this.formatPoints(data.sessionData.totalCost));
     b.bold(false);
     b.drawLine();
     b.line();
 
     // --- Footer ---
     b.align("left");
-    b.line(`CASHIER: ${this.getMainModel(data.sessionData)}`);
+    b.line(`${labels.cashier}: ${this.getMainModel(data.sessionData)}`);
     b.line();
     b.align("center");
-    b.line("Proof of work, but cute.");
+    b.line(labels.footerMessage);
     b.line();
 
     // --- Repo QR code ---
     b.align("center");
-    b.line("Print your own Codex receipts:");
+    b.line(labels.printYourOwn);
     b.qrCode(REPO_URL, 4);
     b.line("github.com/iamxoghks");
     b.line("/codex-receipts");

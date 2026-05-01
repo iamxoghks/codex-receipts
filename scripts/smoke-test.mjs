@@ -127,4 +127,43 @@ function testHtmlEscaping() {
   if (html.includes("<img src=x") || html.includes("<script>alert(")) {
     throw new Error("HTML renderer emitted unescaped user-controlled markup.");
   }
+
+  const koreanHtml = renderer.generateHtml(
+    {
+      location: "천안",
+      config: { timezone: "UTC", locale: "ko" },
+      transcriptData: {
+        sessionId: "session-id",
+        sessionSlug: "session-id",
+        startTime: new Date("2026-01-01T00:00:00.000Z"),
+        endTime: new Date("2026-01-01T00:00:00.000Z"),
+        messages: [],
+        totalMessages: 0,
+        userMessages: 0,
+        assistantMessages: 0,
+        toolUses: 0,
+        filesModified: [],
+        commandsRun: [],
+      },
+      sessionData: {
+        sessionId: "session-id",
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheCreationTokens: 0,
+        cacheReadTokens: 0,
+        totalTokens: 0,
+        totalCost: 0,
+        modelsUsed: ["codex"],
+        modelBreakdowns: [],
+        projectPath: "/tmp/session.jsonl",
+      },
+    },
+    "receipt",
+  );
+
+  for (const expected of ["위치", "세션", "날짜", "합계", "작업 증명"]) {
+    if (!koreanHtml.includes(expected)) {
+      throw new Error(`Korean HTML receipt is missing "${expected}".`);
+    }
+  }
 }

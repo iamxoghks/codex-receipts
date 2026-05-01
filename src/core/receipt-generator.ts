@@ -6,6 +6,7 @@ import {
   formatDateTime,
 } from "../utils/formatting.js";
 import { getHeader, SEPARATOR, LIGHT_SEPARATOR } from "../utils/ascii-art.js";
+import { getReceiptLabels } from "../utils/locale.js";
 
 export interface ReceiptData {
   sessionData: CodexSessionUsage;
@@ -19,6 +20,7 @@ export class ReceiptGenerator {
    * Generate a complete receipt as text
    */
   generateReceipt(data: ReceiptData): string {
+    const labels = getReceiptLabels(data.config.locale);
     const lines: string[] = [];
 
     // Header
@@ -28,9 +30,9 @@ export class ReceiptGenerator {
     lines.push("");
 
     // Location and session info
-    lines.push(this.centerText(`Location: ${data.location}`, 35));
+    lines.push(this.centerText(`${labels.location}: ${data.location}`, 35));
     lines.push(
-      this.centerText(`Session: ${data.transcriptData.sessionSlug}`, 35),
+      this.centerText(`${labels.session}: ${data.transcriptData.sessionSlug}`, 35),
     );
     lines.push(
       this.centerText(
@@ -42,7 +44,7 @@ export class ReceiptGenerator {
 
     // Line items header
     lines.push(SEPARATOR);
-    lines.push(this.padLine("ITEM", "QTY", "POINTS"));
+    lines.push(this.padLine(labels.item, labels.qty, labels.points));
     lines.push(LIGHT_SEPARATOR);
 
     // Model breakdown
@@ -62,7 +64,7 @@ export class ReceiptGenerator {
         // Input tokens
         lines.push(
           this.padLine(
-            "  Input tokens",
+                `  ${labels.input}`,
             formatNumber(model.inputTokens),
             "",
           ),
@@ -71,7 +73,7 @@ export class ReceiptGenerator {
         // Output tokens
         lines.push(
           this.padLine(
-            "  Output tokens",
+                `  ${labels.output}`,
             formatNumber(model.outputTokens),
             "",
           ),
@@ -81,7 +83,7 @@ export class ReceiptGenerator {
         if (model.cacheCreationTokens && model.cacheCreationTokens > 0) {
           lines.push(
             this.padLine(
-                "  Cache write",
+                `  ${labels.cacheWrite}`,
                 formatNumber(model.cacheCreationTokens),
                 "",
             ),
@@ -91,7 +93,7 @@ export class ReceiptGenerator {
         if (model.cacheReadTokens && model.cacheReadTokens > 0) {
           lines.push(
             this.padLine(
-                "  Cache read",
+                `  ${labels.cacheRead}`,
                 formatNumber(model.cacheReadTokens),
                 "",
             ),
@@ -105,19 +107,19 @@ export class ReceiptGenerator {
     // Totals
     lines.push(SEPARATOR);
     lines.push(
-      this.padLine("SUBTOTAL", "", this.formatReceiptPoints(data.sessionData.totalCost)),
+      this.padLine(labels.subtotal, "", this.formatReceiptPoints(data.sessionData.totalCost)),
     );
     lines.push(LIGHT_SEPARATOR);
     lines.push(
-      this.padLine("TOTAL", "", this.formatReceiptPoints(data.sessionData.totalCost)),
+      this.padLine(labels.total, "", this.formatReceiptPoints(data.sessionData.totalCost)),
     );
     lines.push(SEPARATOR);
     lines.push("");
 
     // Footer
-    lines.push(`CASHIER: ${this.getMainModel(data.sessionData)}`);
+    lines.push(`${labels.cashier}: ${this.getMainModel(data.sessionData)}`);
     lines.push("");
-    lines.push(this.centerText("Proof of work, but cute.", 35));
+    lines.push(this.centerText(labels.footerMessage, 35));
     lines.push("");
     lines.push(SEPARATOR);
 
