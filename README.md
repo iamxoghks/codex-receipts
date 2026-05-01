@@ -107,6 +107,12 @@ The MCP server exposes:
 - `generate_codex_receipt`: generate a text receipt and optionally save HTML
   under `~/.codex-receipts/projects`
 
+`generate_codex_receipt` also accepts an optional `printer` value (`usb`,
+`usb:VID:PID`, `tcp://HOST:9100`, or a CUPS printer name). When `printer` is
+set, MCP saves the HTML receipt before trying printer output. If the printer is
+not connected or cannot be found, the tool returns printer troubleshooting
+guidance and the saved `htmlPath` instead of failing the whole receipt request.
+
 Example MCP client config:
 
 ```json

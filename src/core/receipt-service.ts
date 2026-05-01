@@ -5,6 +5,7 @@ import { TranscriptParser } from "./transcript-parser.js";
 import { ReceiptGenerator } from "./receipt-generator.js";
 import { HtmlRenderer } from "./html-renderer.js";
 import { ConfigManager } from "./config-manager.js";
+import { ThermalPrinterRenderer } from "./thermal-printer.js";
 import { LocationDetector } from "../utils/location.js";
 import type { ReceiptData } from "./receipt-generator.js";
 
@@ -12,12 +13,19 @@ export interface GenerateReceiptRequest {
   session?: string;
   location?: string;
   saveHtml?: boolean;
+  printer?: string;
 }
 
 export interface GenerateReceiptResult {
   receiptData: ReceiptData;
   receipt: string;
   htmlPath?: string;
+  printer?: {
+    attempted: boolean;
+    interface?: string;
+    ok: boolean;
+    error?: string;
+  };
 }
 
 export class ReceiptService {
@@ -25,6 +33,7 @@ export class ReceiptService {
   private transcriptParser = new TranscriptParser();
   private receiptGenerator = new ReceiptGenerator();
   private htmlRenderer = new HtmlRenderer();
+  private thermalPrinter = new ThermalPrinterRenderer();
   private configManager = new ConfigManager();
   private locationDetector = new LocationDetector();
 
@@ -51,12 +60,40 @@ export class ReceiptService {
     };
     const receipt = this.receiptGenerator.generateReceipt(receiptData);
 
-    if (!request.saveHtml) {
-      return { receiptData, receipt };
+    const result: GenerateReceiptResult = { receiptData, receipt };
+
+    if (request.saveHtml) {
+      result.htmlPath = await this.saveHtmlReceipt(receiptData, receipt);
     }
 
-    const htmlPath = await this.saveHtmlReceipt(receiptData, receipt);
-    return { receiptData, receipt, htmlPath };
+    if (request.printer) {
+      result.printer = await this.printReceipt(receiptData, request.printer);
+    }
+
+    return result;
+  }
+
+  private async printReceipt(
+    receiptData: ReceiptData,
+    printerInterface: string,
+  ): Promise<NonNullable<GenerateReceiptResult["printer"]>> {
+    try {
+      await this.thermalPrinter.printReceipt(receiptData, printerInterface);
+      return {
+        attempted: true,
+        interface: printerInterface,
+        ok: true,
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unknown printer error";
+      return {
+        attempted: true,
+        interface: printerInterface,
+        ok: false,
+        error: message,
+      };
+    }
   }
 
   private async saveHtmlReceipt(

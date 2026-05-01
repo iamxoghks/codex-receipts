@@ -25,6 +25,13 @@ npx codex-receipts generate
 
 Do not reimplement receipt parsing in the agent. Prefer the CLI so output behavior stays aligned with the package.
 
+When the MCP server is configured, you can also use its tools:
+
+- `list_codex_sessions`
+- `generate_codex_receipt`
+
+For MCP printer output, pass `printer` as `usb`, `usb:VID:PID`, `tcp://HOST:9100`, or a CUPS printer name. MCP saves HTML before attempting printer output and returns printer troubleshooting guidance if printing fails.
+
 ## Common Commands
 
 Latest session, default output:

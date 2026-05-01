@@ -54,7 +54,7 @@ export class McpCommand {
       {
         title: "Generate Codex Receipt",
         description:
-          "Generate a receipt for a local Codex session. Reads only local Codex logs and can optionally save HTML under ~/.codex-receipts.",
+          "Generate a receipt for a local Codex session. Reads only local Codex logs, can save HTML, and can optionally attempt physical printer output.",
         inputSchema: {
           session: z
             .string()
@@ -72,13 +72,20 @@ export class McpCommand {
             .describe(
               "When true, save an HTML receipt under ~/.codex-receipts/projects.",
             ),
+          printer: z
+            .string()
+            .optional()
+            .describe(
+              'Optional printer interface: "usb", "usb:VID:PID", "tcp://HOST:9100", or a CUPS printer name. Printer failures are returned in the tool result.',
+            ),
         },
       },
-      async ({ session, location, saveHtml }) => {
+      async ({ session, location, saveHtml, printer }) => {
         const result = await receiptService.generateReceipt({
           session,
           location,
-          saveHtml,
+          saveHtml: saveHtml || !!printer,
+          printer,
         });
         const structuredContent = {
           sessionId: result.receiptData.sessionData.sessionId,
@@ -86,14 +93,18 @@ export class McpCommand {
           totalTokens: result.receiptData.sessionData.totalTokens,
           totalPoints: result.receiptData.sessionData.totalCost,
           htmlPath: result.htmlPath,
+          printer: result.printer,
           receipt: result.receipt,
         };
+        const summary = result.printer?.ok === false
+          ? `${result.receipt}\n\nPrinter output failed:\n${result.printer.error}\n\nHTML receipt saved: ${result.htmlPath || "(not saved)"}`
+          : result.receipt;
 
         return {
           content: [
             {
               type: "text",
-              text: result.receipt,
+              text: summary,
             },
           ],
           structuredContent,
