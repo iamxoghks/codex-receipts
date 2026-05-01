@@ -23,7 +23,7 @@ export class SetupCommand {
       {
         type: "text",
         name: "location",
-        message: "Default location (leave blank to auto-detect):",
+        message: "Default location (leave blank for The Cloud):",
         initial: "",
       },
       {

@@ -30,7 +30,7 @@ program
         return [...(prev || []), ...formats];
       }),
   )
-  .option("-l, --location <text>", "Override location detection")
+  .option("-l, --location <text>", "Override receipt location")
   .option(
     "-p, --printer <interface>",
     'Printer: "usb" (auto-detect), "usb:VID:PID", "tcp://host:port", or CUPS name',

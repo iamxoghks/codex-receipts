@@ -54,7 +54,7 @@ export class ConfigCommand {
     console.log(chalk.gray(`Location: ${configPath}\n`));
 
     this.printConfigItem("Version", config.version);
-    this.printConfigItem("Location", config.location || "(auto-detect)");
+    this.printConfigItem("Location", config.location || "(default)");
     this.printConfigItem("Timezone", config.timezone || "(system default)");
     this.printConfigItem("Printer", config.printer || "(not set)");
 
