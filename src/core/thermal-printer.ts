@@ -4,6 +4,7 @@ import { promisify } from "util";
 import type { ReceiptData } from "./receipt-generator.js";
 import { formatNumber, formatDateTime } from "../utils/formatting.js";
 import { getReceiptLabels } from "../utils/locale.js";
+import { getReceiptTextOptions } from "../utils/receipt-text.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -211,6 +212,7 @@ export class ThermalPrinterRenderer {
    */
   private buildReceipt(data: ReceiptData): Buffer {
     const labels = getReceiptLabels(data.config.locale);
+    const textOptions = getReceiptTextOptions(data.config, labels);
     const b = new EscPosBuilder();
 
     b.init();
@@ -272,10 +274,12 @@ export class ThermalPrinterRenderer {
 
     // --- Footer ---
     b.align("left");
-    b.line(`${labels.cashier}: ${this.getMainModel(data.sessionData)}`);
+    b.line(
+      `${textOptions.cashierLabel}: ${textOptions.cashier || this.getMainModel(data.sessionData)}`,
+    );
     b.line();
     b.align("center");
-    b.line(labels.footerMessage);
+    b.line(textOptions.footerMessage);
     b.line();
 
     // --- Repo QR code ---

@@ -16,6 +16,9 @@ export interface GenerateReceiptRequest {
   saveHtml?: boolean;
   printer?: string;
   locale?: "en" | "ko";
+  cashierLabel?: string;
+  cashier?: string;
+  footerMessage?: string;
 }
 
 export interface GenerateReceiptResult {
@@ -59,7 +62,13 @@ export class ReceiptService {
       sessionData,
       transcriptData,
       location,
-      config: { ...config, locale: request.locale || config.locale },
+      config: {
+        ...config,
+        locale: request.locale || config.locale,
+        cashierLabel: request.cashierLabel || config.cashierLabel,
+        cashier: request.cashier || config.cashier,
+        footerMessage: request.footerMessage || config.footerMessage,
+      },
     };
     const receipt = this.receiptGenerator.generateReceipt(receiptData);
 

@@ -70,6 +70,20 @@ export class McpCommand {
             .enum(["en", "ko"])
             .optional()
             .describe("Optional receipt language. Defaults to config or en."),
+          cashierLabel: z
+            .string()
+            .optional()
+            .describe("Optional override for the cashier label."),
+          cashier: z
+            .string()
+            .optional()
+            .describe(
+              "Optional override for the cashier value. Defaults to the model name from the Codex session.",
+            ),
+          footerMessage: z
+            .string()
+            .optional()
+            .describe("Optional override for the receipt footer message."),
           saveHtml: z
             .boolean()
             .optional()
@@ -84,11 +98,23 @@ export class McpCommand {
             ),
         },
       },
-      async ({ session, location, locale, saveHtml, printer }) => {
+      async ({
+        session,
+        location,
+        locale,
+        cashierLabel,
+        cashier,
+        footerMessage,
+        saveHtml,
+        printer,
+      }) => {
         const result = await receiptService.generateReceipt({
           session,
           location,
           locale,
+          cashierLabel,
+          cashier,
+          footerMessage,
           saveHtml: saveHtml || !!printer,
           printer,
         });

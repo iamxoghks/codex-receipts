@@ -1,6 +1,7 @@
 import type { ReceiptData } from "./receipt-generator.js";
 import { formatNumber, formatDateTime } from "../utils/formatting.js";
 import { getReceiptLabels } from "../utils/locale.js";
+import { getReceiptTextOptions } from "../utils/receipt-text.js";
 
 export class HtmlRenderer {
   /**
@@ -8,6 +9,7 @@ export class HtmlRenderer {
    */
   generateHtml(data: ReceiptData, receiptText: string): string {
     const labels = getReceiptLabels(data.config.locale);
+    const textOptions = getReceiptTextOptions(data.config, labels);
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -281,8 +283,8 @@ export class HtmlRenderer {
       </div>
 
       <div class="footer">
-        <div>${this.escapeHtml(labels.cashier)}: ${this.getMainModel(data)}</div>
-        <div class="footer-message">${this.escapeHtml(labels.footerMessage)}</div>
+        <div>${this.escapeHtml(textOptions.cashierLabel)}: ${this.escapeHtml(textOptions.cashier || this.getMainModel(data))}</div>
+        <div class="footer-message">${this.escapeHtml(textOptions.footerMessage)}</div>
         <div class="generated-by">
           ${this.escapeHtml(labels.generatedBy)} <strong>Codex receipts</strong><br>
           <a href="https://github.com/iamxoghks/codex-receipts" style="color: #333;">github.com/iamxoghks/codex-receipts</a>

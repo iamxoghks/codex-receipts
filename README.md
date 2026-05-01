@@ -57,6 +57,15 @@ Generate a Korean receipt:
 npx codex-receipts generate --output html --locale ko
 ```
 
+Override receipt text:
+
+```bash
+npx codex-receipts generate \
+  --cashier-label "Operator" \
+  --cashier "Codex Bot" \
+  --footer-message "Printed on purpose."
+```
+
 Generate console output:
 
 ```bash
@@ -159,6 +168,9 @@ npx codex-receipts setup
 npx codex-receipts config --show
 npx codex-receipts config --set timezone="Asia/Seoul"
 npx codex-receipts config --set locale=ko
+npx codex-receipts config --set cashierLabel="담당"
+npx codex-receipts config --set cashier="Codex Bot"
+npx codex-receipts config --set footerMessage="오늘도 수고했음"
 npx codex-receipts config --set printer=usb
 npx codex-receipts config --reset
 ```
@@ -182,6 +194,9 @@ remote service.
   under `~/.codex-receipts`.
 - Receipt language can be set per run with `--locale en|ko` or in config with
   `locale=en|ko`.
+- Cashier label, cashier value, and footer message can be overridden per run or
+  saved in config. If `cashier` is not set, Codex Receipts uses the model name
+  recorded in the session log.
 - Location defaults to `The Cloud`; the package does not call public-IP or
   geolocation services.
 - Shell commands are executed with argument arrays, not interpolated shell

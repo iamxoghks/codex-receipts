@@ -35,6 +35,7 @@ For MCP printer output, pass `printer` as `usb`, `usb:VID:PID`, `tcp://HOST:9100
 
 For Korean receipts, pass `--locale ko` in the CLI or `locale: "ko"` to the MCP tool.
 If Korean printer output is requested, tell the user the printer or driver must support UTF-8 or a Korean code page; otherwise text may print garbled and HTML output is the safer fallback.
+Use `--cashier-label`, `--cashier`, and `--footer-message` when the user asks to customize the receipt copy. If `--cashier` is omitted, the package uses the model name from the Codex session automatically.
 
 ## Common Commands
 
@@ -60,6 +61,12 @@ Korean output:
 
 ```bash
 npx codex-receipts generate --output html --locale ko
+```
+
+Custom receipt copy:
+
+```bash
+npx codex-receipts generate --cashier-label "담당" --cashier "Codex Bot" --footer-message "오늘도 수고했음"
 ```
 
 Thermal printer output:

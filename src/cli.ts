@@ -39,6 +39,9 @@ program
     new Option("--locale <locale>", "Receipt language: en or ko")
       .choices(["en", "ko"]),
   )
+  .option("--cashier-label <text>", "Override the cashier label")
+  .option("--cashier <text>", "Override the cashier value")
+  .option("--footer-message <text>", "Override the receipt footer message")
   .option(
     "-p, --printer <interface>",
     'Printer: "usb" (auto-detect), "usb:VID:PID", "tcp://host:port", or CUPS name',

@@ -29,6 +29,9 @@ export interface GenerateOptions {
   location?: string;
   printer?: string;
   locale?: "en" | "ko";
+  cashierLabel?: string;
+  cashier?: string;
+  footerMessage?: string;
 }
 
 export class GenerateCommand {
@@ -107,7 +110,13 @@ export class GenerateCommand {
         sessionData,
         transcriptData,
         location,
-        config: { ...config, locale: options.locale || config.locale },
+        config: {
+          ...config,
+          locale: options.locale || config.locale,
+          cashierLabel: options.cashierLabel || config.cashierLabel,
+          cashier: options.cashier || config.cashier,
+          footerMessage: options.footerMessage || config.footerMessage,
+        },
       };
 
       const receipt = this.receiptGenerator.generateReceipt(receiptData);

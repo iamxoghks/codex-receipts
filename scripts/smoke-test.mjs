@@ -168,6 +168,54 @@ function testHtmlEscaping() {
       throw new Error(`Korean HTML receipt is missing "${expected}".`);
     }
   }
+
+  const customizedHtml = renderer.generateHtml(
+    {
+      location: "The Cloud",
+      config: {
+        timezone: "UTC",
+        cashierLabel: "Operator",
+        cashier: "Codex Bot",
+        footerMessage: "Printed on purpose.",
+      },
+      transcriptData: {
+        sessionId: "session-id",
+        sessionSlug: "session-id",
+        startTime: new Date("2026-01-01T00:00:00.000Z"),
+        endTime: new Date("2026-01-01T00:00:00.000Z"),
+        messages: [],
+        totalMessages: 0,
+        userMessages: 0,
+        assistantMessages: 0,
+        toolUses: 0,
+        filesModified: [],
+        commandsRun: [],
+      },
+      sessionData: {
+        sessionId: "session-id",
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheCreationTokens: 0,
+        cacheReadTokens: 0,
+        totalTokens: 0,
+        totalCost: 0,
+        modelsUsed: ["gpt-5.5"],
+        modelBreakdowns: [],
+        projectPath: "/tmp/session.jsonl",
+      },
+    },
+    "receipt",
+  );
+
+  for (const expected of ["Operator: Codex Bot", "Printed on purpose."]) {
+    if (!customizedHtml.includes(expected)) {
+      throw new Error(`Customized HTML receipt is missing "${expected}".`);
+    }
+  }
+
+  if (customizedHtml.includes("CASHIER: GPT-5.5")) {
+    throw new Error("Customized HTML receipt leaked the default cashier text.");
+  }
 }
 
 function testPrinterLocaleWarning() {
