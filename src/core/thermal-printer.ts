@@ -1,10 +1,10 @@
 import { createConnection } from "net";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { promisify } from "util";
 import type { ReceiptData } from "./receipt-generator.js";
 import { formatNumber, formatDateTime } from "../utils/formatting.js";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 const WIDTH = 40; // TM-T88V 80mm paper, Font A minus margin
 const LEFT_MARGIN_DOTS = 12; // 1 character width at 203 dpi
@@ -394,11 +394,11 @@ export class ThermalPrinterRenderer {
     // `lp` gives a misleading "No such file or directory" when the
     // printer name doesn't match any CUPS destination.
     try {
-      await execAsync(`lpstat -p "${printerName}"`);
+      await execFileAsync("lpstat", ["-p", printerName]);
     } catch {
       let available = "";
       try {
-        const { stdout } = await execAsync("lpstat -p");
+        const { stdout } = await execFileAsync("lpstat", ["-p"]);
         const names = stdout
           .split("\n")
           .filter((l) => l.startsWith("printer "))
@@ -423,7 +423,7 @@ export class ThermalPrinterRenderer {
 
     try {
       await writeFile(tmpFile, buffer);
-      await execAsync(`lp -d "${printerName}" -o raw "${tmpFile}"`);
+      await execFileAsync("lp", ["-d", printerName, "-o", "raw", tmpFile]);
     } finally {
       try {
         await unlink(tmpFile);
