@@ -3,12 +3,14 @@ import { spawnSync } from "node:child_process";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { HtmlRenderer } from "../dist/core/html-renderer.js";
+import { getPrinterLocaleWarning } from "../dist/utils/printer-warning.js";
 
 const cli = ["node", "bin/codex-receipts.js"];
 
 runCli(["--help"], "Usage: codex-receipts");
 runCli(["generate", "--help"], "Generate a receipt for a Codex session");
 testHtmlEscaping();
+testPrinterLocaleWarning();
 
 const hasCodexSessions =
   existsSync(`${process.env.HOME}/.codex/session_index.jsonl`) ||
@@ -165,5 +167,48 @@ function testHtmlEscaping() {
     if (!koreanHtml.includes(expected)) {
       throw new Error(`Korean HTML receipt is missing "${expected}".`);
     }
+  }
+}
+
+function testPrinterLocaleWarning() {
+  const baseData = {
+    location: "The Cloud",
+    transcriptData: {
+      sessionId: "session-id",
+      sessionSlug: "session-id",
+      startTime: new Date("2026-01-01T00:00:00.000Z"),
+      endTime: new Date("2026-01-01T00:00:00.000Z"),
+      messages: [],
+      totalMessages: 0,
+      userMessages: 0,
+      assistantMessages: 0,
+      toolUses: 0,
+      filesModified: [],
+      commandsRun: [],
+    },
+    sessionData: {
+      sessionId: "session-id",
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheCreationTokens: 0,
+      cacheReadTokens: 0,
+      totalTokens: 0,
+      totalCost: 0,
+      modelsUsed: ["codex"],
+      modelBreakdowns: [],
+      projectPath: "/tmp/session.jsonl",
+    },
+  };
+
+  if (getPrinterLocaleWarning({ ...baseData, config: { locale: "en" } })) {
+    throw new Error("English receipts should not emit a Korean printer warning.");
+  }
+
+  const warning = getPrinterLocaleWarning({
+    ...baseData,
+    config: { locale: "ko" },
+  });
+  if (!warning?.includes("UTF-8") || !warning.includes("Korean code page")) {
+    throw new Error("Korean printer warning is missing UTF-8/codepage guidance.");
   }
 }

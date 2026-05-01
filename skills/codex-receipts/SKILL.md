@@ -34,6 +34,7 @@ When the MCP server is configured, you can also use its tools:
 For MCP printer output, pass `printer` as `usb`, `usb:VID:PID`, `tcp://HOST:9100`, or a CUPS printer name. MCP saves HTML before attempting printer output and returns printer troubleshooting guidance if printing fails.
 
 For Korean receipts, pass `--locale ko` in the CLI or `locale: "ko"` to the MCP tool.
+If Korean printer output is requested, tell the user the printer or driver must support UTF-8 or a Korean code page; otherwise text may print garbled and HTML output is the safer fallback.
 
 ## Common Commands
 

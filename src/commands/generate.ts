@@ -11,6 +11,7 @@ import { HtmlRenderer } from "../core/html-renderer.js";
 import { ThermalPrinterRenderer } from "../core/thermal-printer.js";
 import { ConfigManager } from "../core/config-manager.js";
 import { LocationDetector } from "../utils/location.js";
+import { getPrinterLocaleWarning } from "../utils/printer-warning.js";
 import type { ReceiptData } from "../core/receipt-generator.js";
 
 const execFileAsync = promisify(execFile);
@@ -186,6 +187,11 @@ export class GenerateCommand {
       throw new Error(
         'No printer specified. Use --printer <name> or set via: codex-receipts config --set printer=EPSON_TM_T88V',
       );
+    }
+
+    const warning = getPrinterLocaleWarning(receiptData);
+    if (warning) {
+      spinner.info(warning);
     }
 
     spinner.start("Sending to printer...");

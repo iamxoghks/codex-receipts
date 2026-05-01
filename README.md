@@ -198,6 +198,9 @@ remote service.
 
 Korean labels work for console and HTML output. Thermal-printer Korean output
 depends on the printer firmware/codepage support for UTF-8 or Korean text.
+When `--locale ko` is used with `--output printer`, the CLI and MCP result show
+a reminder about UTF-8/Korean codepage support before or alongside printer
+output.
 
 ## Codex Skill
 
