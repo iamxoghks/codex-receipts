@@ -61,6 +61,21 @@ Print to a thermal receipt printer:
 npx codex-receipts generate --output printer --printer usb
 ```
 
+USB mode looks for the default Epson TM-T88V device (`04b8:0202`). If your
+printer appears in the visible USB device list with a different id, pass it
+explicitly:
+
+```bash
+npx codex-receipts generate --output printer --printer usb:VID:PID
+```
+
+Network and CUPS printers are also supported:
+
+```bash
+npx codex-receipts generate --output printer --printer tcp://HOST:9100
+npx codex-receipts generate --output printer --printer CUPS_PRINTER_NAME
+```
+
 Generate for a specific session id, id prefix, or thread-name fragment:
 
 ```bash

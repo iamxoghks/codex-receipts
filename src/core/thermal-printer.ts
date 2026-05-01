@@ -15,6 +15,7 @@ const REPO_URL = "https://github.com/iamxoghks/codex-receipts";
 const EPSON_VENDOR_ID = 0x04b8;
 // TM-T88V product ID
 const TM_T88V_PRODUCT_ID = 0x0202;
+const DEFAULT_USB_PRINTER_ID = `${EPSON_VENDOR_ID.toString(16)}:${TM_T88V_PRODUCT_ID.toString(16)}`;
 
 // ESC/POS command constants
 const ESC = 0x1b;
@@ -344,8 +345,14 @@ export class ThermalPrinterRenderer {
         .join("\n");
 
       throw new Error(
-        `USB printer not found (looking for ${vid.toString(16)}:${pid.toString(16)}).\n` +
-          `Visible USB devices:\n${summary || "  (none)"}`,
+        "USB printer not found.\n" +
+          `Looking for: ${vid.toString(16)}:${pid.toString(16)}${spec === "usb" ? ` (default Epson TM-T88V ${DEFAULT_USB_PRINTER_ID})` : ""}\n` +
+          `Visible USB devices:\n${summary || "  (none)"}\n\n` +
+          "If your printer is listed above, retry with:\n" +
+          "  codex-receipts generate --output printer --printer usb:VID:PID\n\n" +
+          "Other printer interfaces:\n" +
+          "  codex-receipts generate --output printer --printer tcp://HOST:9100\n" +
+          "  codex-receipts generate --output printer --printer CUPS_PRINTER_NAME",
       );
     }
 

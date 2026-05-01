@@ -51,6 +51,14 @@ Thermal printer output:
 npx codex-receipts generate --output printer --printer usb
 ```
 
+USB printer targeting:
+
+```bash
+npx codex-receipts generate --output printer --printer usb:VID:PID
+npx codex-receipts generate --output printer --printer tcp://HOST:9100
+npx codex-receipts generate --output printer --printer CUPS_PRINTER_NAME
+```
+
 Specific session id, id prefix, or thread-name fragment:
 
 ```bash
@@ -83,5 +91,5 @@ npx codex-receipts generate --location "Cheonan, KR"
 2. Choose output: use `console` for chat-friendly terminal output, `html` for a shareable local file, and `printer` only when the user asks to print.
 3. Run `npx codex-receipts generate` with the selected flags.
 4. Report the generated output path for HTML receipts. For console receipts, summarize or relay the important terminal output.
-5. If the command fails, report the exact error and do not manually parse Codex logs unless the user explicitly asks for debugging.
-
+5. If printer output fails, report the exact error. For USB printer-not-found errors, point out the visible `VID:PID` list and suggest retrying with `--printer usb:VID:PID`, `--printer tcp://HOST:9100`, or a CUPS printer name.
+6. If the command fails for another reason, report the exact error and do not manually parse Codex logs unless the user explicitly asks for debugging.
