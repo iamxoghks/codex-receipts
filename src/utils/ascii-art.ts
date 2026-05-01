@@ -2,27 +2,13 @@
  * ASCII art headers for receipts
  */
 
-export const CODEX_DOT_LOGO = [
-  "     ●●●     ",
-  "   ●●   ●●   ",
-  "  ●       ●  ",
-  " ●  ●●●●  ● ",
-  " ● ●    ● ● ",
-  "  ● ●  ● ●  ",
-  "   ●●●●●   ",
-  "  ● ●  ● ●  ",
-  " ● ●    ● ● ",
-  " ●  ●●●●  ● ",
-  "  ●       ●  ",
-  "   ●●   ●●   ",
-  "     ●●●     ",
-].join("\n");
+export const CODEX_WORDMARK = "       CODEX       ";
 
 /**
  * Get the Codex receipt logo
  */
 export function getHeader(): string {
-  return CODEX_DOT_LOGO;
+  return CODEX_WORDMARK;
 }
 
 /**
