@@ -2,6 +2,8 @@
 
 Receipt-style summaries for Codex work sessions.
 
+[한국어 README](./README.ko.md)
+
 This fork turns the original [`claude-receipts`](https://github.com/chrishutchinson/claude-receipts) idea into a Codex-native toy: it reads local Codex session logs, counts the visible work trail, and prints a tiny "proof of work" receipt for the latest session.
 
 ## What It Prints
@@ -113,6 +115,11 @@ set, MCP saves the HTML receipt before trying printer output. If the printer is
 not connected or cannot be found, the tool returns printer troubleshooting
 guidance and the saved `htmlPath` instead of failing the whole receipt request.
 
+Printer output is a local side effect. Only enable the MCP `printer` option in
+trusted local MCP clients, and only pass `tcp://HOST:9100` values for printers
+you trust. The TCP mode opens a local outbound socket to the host and port you
+provide; it is intended for network receipt printers, not for remote API access.
+
 Example MCP client config:
 
 ```json
@@ -160,6 +167,18 @@ Codex Receipts reads:
 It only reads local Codex session files and writes generated receipts under `~/.codex-receipts`.
 Receipt generation does not send session contents or public IP information to a
 remote service.
+
+## Security Notes
+
+- The CLI and MCP server read local Codex logs from `~/.codex` and write receipts
+  under `~/.codex-receipts`.
+- Location defaults to `The Cloud`; the package does not call public-IP or
+  geolocation services.
+- Shell commands are executed with argument arrays, not interpolated shell
+  strings.
+- HTML receipts escape local log-derived text before rendering.
+- Printer output can talk to USB devices, CUPS, or a user-supplied TCP printer
+  endpoint. Treat MCP printer access as trusted-local only.
 
 ## Outputs
 
