@@ -57,6 +57,15 @@ npx codex-receipts generate --output html
 npx codex-receipts generate --output html --locale ko
 ```
 
+영수증 문구 덮어쓰기:
+
+```bash
+npx codex-receipts generate \
+  --cashier-label "담당" \
+  --cashier "Codex Bot" \
+  --footer-message "오늘도 수고했음"
+```
+
 터미널 출력:
 
 ```bash
@@ -145,6 +154,9 @@ npx codex-receipts setup
 npx codex-receipts config --show
 npx codex-receipts config --set timezone="Asia/Seoul"
 npx codex-receipts config --set locale=ko
+npx codex-receipts config --set cashierLabel="담당"
+npx codex-receipts config --set cashier="Codex Bot"
+npx codex-receipts config --set footerMessage="오늘도 수고했음"
 npx codex-receipts config --set printer=usb
 npx codex-receipts config --reset
 ```
@@ -164,6 +176,7 @@ Codex Receipts가 읽는 파일:
 
 - CLI와 MCP 서버는 `~/.codex`의 로컬 Codex 로그를 읽고 `~/.codex-receipts` 아래에 영수증을 씁니다.
 - 영수증 언어는 실행 시 `--locale en|ko`로 지정하거나 config에 `locale=en|ko`로 저장할 수 있습니다.
+- cashier label, cashier 값, footer message는 실행 옵션이나 config로 덮어쓸 수 있습니다. `cashier`를 설정하지 않으면 세션 로그에 기록된 모델명이 자동으로 표시됩니다.
 - 위치 기본값은 `The Cloud`입니다. 공인 IP나 위치 조회 서비스를 호출하지 않습니다.
 - 외부 명령은 shell 문자열이 아니라 인자 배열로 실행합니다.
 - HTML 영수증은 로컬 로그에서 온 텍스트를 이스케이프한 뒤 렌더링합니다.

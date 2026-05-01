@@ -6,6 +6,9 @@ export interface ReceiptConfig {
   timezone?: string;
   printer?: string;
   locale?: "en" | "ko";
+  cashierLabel?: string;
+  cashier?: string;
+  footerMessage?: string;
 }
 
 export const DEFAULT_CONFIG: ReceiptConfig = {

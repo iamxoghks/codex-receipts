@@ -7,6 +7,7 @@ import {
 } from "../utils/formatting.js";
 import { getHeader, SEPARATOR, LIGHT_SEPARATOR } from "../utils/ascii-art.js";
 import { getReceiptLabels } from "../utils/locale.js";
+import { getReceiptTextOptions } from "../utils/receipt-text.js";
 
 export interface ReceiptData {
   sessionData: CodexSessionUsage;
@@ -21,6 +22,7 @@ export class ReceiptGenerator {
    */
   generateReceipt(data: ReceiptData): string {
     const labels = getReceiptLabels(data.config.locale);
+    const textOptions = getReceiptTextOptions(data.config, labels);
     const lines: string[] = [];
 
     // Header
@@ -117,9 +119,11 @@ export class ReceiptGenerator {
     lines.push("");
 
     // Footer
-    lines.push(`${labels.cashier}: ${this.getMainModel(data.sessionData)}`);
+    lines.push(
+      `${textOptions.cashierLabel}: ${textOptions.cashier || this.getMainModel(data.sessionData)}`,
+    );
     lines.push("");
-    lines.push(this.centerText(labels.footerMessage, 35));
+    lines.push(this.centerText(textOptions.footerMessage, 35));
     lines.push("");
     lines.push(SEPARATOR);
 

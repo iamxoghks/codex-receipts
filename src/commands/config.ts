@@ -58,6 +58,9 @@ export class ConfigCommand {
     this.printConfigItem("Timezone", config.timezone || "(system default)");
     this.printConfigItem("Printer", config.printer || "(not set)");
     this.printConfigItem("Locale", config.locale || "en");
+    this.printConfigItem("Cashier Label", config.cashierLabel || "(default)");
+    this.printConfigItem("Cashier", config.cashier || "(auto model)");
+    this.printConfigItem("Footer Message", config.footerMessage || "(default)");
 
     console.log("");
   }
@@ -81,6 +84,9 @@ export class ConfigCommand {
       "timezone",
       "printer",
       "locale",
+      "cashierLabel",
+      "cashier",
+      "footerMessage",
     ];
 
     if (!validKeys.includes(trimmedKey)) {
